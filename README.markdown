@@ -1,4 +1,4 @@
-= INSTALLATION =
+# INSTALLATION
 
 Create a `wordpress-seo-modules` folder within your plugins directory. Copy the `wpseo-news` directory into that directory. Go into the SEO admin section and enable the XML News Sitemap feature that should now be showing up on your Dashboard.
 
