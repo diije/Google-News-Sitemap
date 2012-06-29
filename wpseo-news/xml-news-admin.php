@@ -18,13 +18,14 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 	public function admin_panel() {
 		$this->currentoption = 'wpseo_xml';
 
-		$options = get_option( 'wpseo_xml' );
+		$options = get_option( $this->currentoption );
 
-		$content = '<p>' . __( 'You will generally only need XML News sitemap when your website is included in Google News. If it is, check the box below to enable the XML News Sitemap functionality.' ) . '</p>';
-		$content .= $this->checkbox( 'enablexmlnewssitemap', __( 'Enable  XML News sitemaps functionality.' ) );
-		$content .= '<div id="newssitemapinfo">';
-		$content .= $this->textinput( 'newssitemapname', __( 'Google News Publication Name', 'yoast-wpseo' ) );
-		$content .= $this->select( 'newssitemap_default_genre', __( 'Default Genre', 'yoast-wpseo' ),
+		echo '<h2>'.__('Google News Sitemaps','wordpress-seo').'</h2>';
+		echo '<p>' . __( 'You will generally only need XML News sitemap when your website is included in Google News. If it is, check the box below to enable the XML News Sitemap functionality.' ) . '</p>';
+		echo $this->checkbox( 'enablexmlnewssitemap', __( 'Enable  XML News sitemaps functionality.' ) );
+		echo '<div id="newssitemapinfo">';
+		echo $this->textinput( 'newssitemapname', __( 'Google News Publication Name', 'yoast-wpseo' ) );
+		echo $this->select( 'newssitemap_default_genre', __( 'Default Genre', 'yoast-wpseo' ),
 			array(
 				"none"          => __( "None", 'yoast-wpseo' ),
 				"pressrelease"  => __( "Press Release", 'yoast-wpseo' ),
@@ -35,38 +36,23 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 				"usergenerated" => __( "User Generated", 'yoast-wpseo' ),
 			) );
 
-		$content .= $this->textinput( 'newssitemap_default_keywords', __( 'Default Keywords', 'yoast-wpseo' ) );
-		$content .= '<p>' . __( 'It might be wise to add some of Google\'s suggested keywords to all of your posts, add them as a comma separated list. Find the list here: ' ) . make_clickable( 'http://www.google.com/support/news_pub/bin/answer.py?answer=116037' ) . '</p>';
+		echo $this->textinput( 'newssitemap_default_keywords', __( 'Default Keywords', 'yoast-wpseo' ) );
+		echo '<p>' . __( 'It might be wise to add some of Google\'s suggested keywords to all of your posts, add them as a comma separated list. Find the list here: ' ) . make_clickable( 'http://www.google.com/support/news_pub/bin/answer.py?answer=116037' ) . '</p>';
 
-		$content .= '<h4>' . __( 'Post Types to include in News Sitemap' ) . '</h4>';
+		echo '<h4>' . __( 'Post Types to include in News Sitemap' ) . '</h4>';
 
-		$content .= '<p>';
-		foreach ( get_post_types( array(), 'objects' ) as $posttype ) {
-			$sel = '';
-			if ( in_array( $posttype->name, array( 'revision', 'nav_menu_item' ) ) )
-				continue;
-			if ( isset( $options['newssitemap_posttypes'] ) && in_array( $posttype->name, $options['newssitemap_posttypes'] ) )
-				$sel = 'checked="checked" ';
-			$content .= '<input class="checkbox" id="include' . $posttype->name . '" type="checkbox" name="wpseo_xml[newssitemap_posttypes][' . $posttype->name . ']" ' . $sel . 'value="' . $posttype->name . '"/> <label for="include' . $posttype->name . '">' . $posttype->labels->name . '</label><br class="clear">';
+		foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $posttype ) {
+			echo $this->checkbox( 'newssitemap_include_'.$posttype->name, $posttype->labels->name , false );
 		}
-		$content .= '</p>';
 
-		if ( isset( $options['newssitemap_posttypes']['post'] ) ) {
-			$content .= '<h4>' . __( 'Post categories to exclude' ) . '</h4>';
-			$content .= '<p>';
+		if ( isset( $options['newssitemap_include_post'] ) ) {
+			echo '<h4>' . __( 'Post categories to exclude' ) . '</h4>';
 			foreach ( get_categories() as $cat ) {
-				// echo '<pre>'.print_r($cat,1).'</pre>';
-				$sel = '';
-				if ( isset( $options['newssitemap_excludecats'] ) && in_array( $cat->slug, $options['newssitemap_excludecats'] ) )
-					$sel = 'checked="checked" ';
-				$content .= '<input class="checkbox" id="catexclude_' . $cat->slug . '" type="checkbox" name="wpseo_xml[newssitemap_excludecats][' . $cat->slug . ']" ' . $sel . 'value="' . $cat->slug . '"/> <label for="catexclude_' . $cat->slug . '">' . $cat->name . ' (' . $cat->count . ' posts)</label><br class="clear">';
+				echo $this->checkbox( 'catexclude_' . $cat->slug, $cat->name . ' (' . $cat->count . ' posts)', false );
 			}
-			$content .= '</p>';
 		}
 
-		$content .= '</div>';
-
-		$this->postbox( 'xmlnewssitemaps', __( 'XML News Sitemap', 'yoast-wpseo' ), $content );
+		echo '</div>';
 
 	}
 

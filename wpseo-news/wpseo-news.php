@@ -33,18 +33,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 function load_news_classes() {
 	$options = get_option( 'wpseo_xml' );
 
+	$enabled = true;
 	if ( !isset( $options['enablexmlnewssitemap'] ) || !$options['enablexmlnewssitemap'] )
-		return;
+		$enabled = false;
 
 	if ( is_admin() ) {
 		global $pagenow;
-		if ( in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ) ) ) {
+		if ( $enabled && in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ) ) ) {
 			require_once 'xml-news-metabox.php';
 		}
 		if ( in_array( $pagenow, array( 'admin.php' ) ) ) {
 			require_once 'xml-news-admin.php';
 		}
-	} else {
+	} else if ( $enabled ) {
 		require_once 'xml-news-sitemap-class.php';
 	}
 }
