@@ -6,9 +6,15 @@
 class WPSEO_XML_News_Sitemap_Metabox extends WPSEO_Metabox {
 
 	/**
+	 * Options array
+	 */
+	private $options = array();
+
+	/**
 	 * Class constructor
 	 */
 	public function __construct() {
+		$this->options = get_option( 'wpseo_news' );
 		add_filter( 'wpseo_save_metaboxes', array( &$this, 'save_meta_boxes' ), 10, 1 );
 		add_action( 'wpseo_tab_header', array( &$this, 'tab_header' ) );
 		add_action( 'wpseo_tab_content', array( &$this, 'tab_content' ) );
@@ -39,9 +45,8 @@ class WPSEO_XML_News_Sitemap_Metabox extends WPSEO_Metabox {
 	public function tab_header() {
 		global $post;
 
-		$options = get_option( "wpseo" );
-		if ( isset ( $options['newssitemap_posttypes'] ) && $options['newssitemap_posttypes'] != '' ) {
-			foreach ( $options['newssitemap_posttypes'] as $post_type ) {
+		if ( isset ( $this->options['newssitemap_posttypes'] ) && $this->options['newssitemap_posttypes'] != '' ) {
+			foreach ( $this->options['newssitemap_posttypes'] as $post_type ) {
 				if ( $post->post_type == $post_type )
 					echo '<li class="news"><a class="wpseo_tablink" href="#wpseo_news">' . __( 'Google News' ) . '</a></li>';
 			}
@@ -59,9 +64,8 @@ class WPSEO_XML_News_Sitemap_Metabox extends WPSEO_Metabox {
 	public function tab_content() {
 		global $post;
 
-		$options = get_option( "wpseo" );
-		if ( isset( $options['newssitemap_posttypes'] ) && $options['newssitemap_posttypes'] != '' ) {
-			if ( !in_array( $post->post_type, $options['newssitemap_posttypes'] ) )
+		if ( isset( $this->options['newssitemap_posttypes'] ) && $this->options['newssitemap_posttypes'] != '' ) {
+			if ( !in_array( $post->post_type, $this->options['newssitemap_posttypes'] ) )
 				return;
 		} else {
 			if ( $post->post_type != 'post' )
@@ -82,13 +86,19 @@ class WPSEO_XML_News_Sitemap_Metabox extends WPSEO_Metabox {
 	 */
 	public function get_meta_boxes() {
 		$mbs                             = array();
-		$options                         = get_option( 'wpseo_xml' );
-		$stdgenre                        = ( isset( $options['newssitemap_default_genre'] ) ) ? $options['newssitemap_default_genre'] : 'blog';
+		$stdgenre                        = ( isset( $this->options['newssitemap_default_genre'] ) ) ? $this->options['newssitemap_default_genre'] : 'blog';
 		$mbs['newssitemap-include']      = array(
 			"name"  => "newssitemap-include",
 			"type"  => "checkbox",
-			"std"   => 'on',
+			"std"   => "on",
 			"title" => __( "Include in News Sitemap" )
+		);
+		$mbs['newssitemap-keywords']      = array(
+			"name"  => "newssitemap-keywords",
+			"type"  => "text",
+			"std"   => "",
+			"title" => __( "Meta News Keywords" ),
+			"description" => __( "Comma separated list of the keywords this article aims at.", "wordpress-seo" ),
 		);
 		$mbs['newssitemap-genre']        = array(
 			"name"        => "newssitemap-genre",
