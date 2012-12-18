@@ -6,9 +6,16 @@
 class WPSEO_XML_News_Sitemap {
 
 	/**
+	 * Options array
+	 */
+	private $options = array();
+
+	/**
 	 * Class constructor
 	 */
 	public function __construct() {
+		$this->options = get_option('wpseo_news');
+
 		add_action( 'init', array( $this, 'init' ), 10 );
 		add_action( 'wpseo_head', array( $this, 'head' ) );
 		add_filter( 'wpseo_sitemap_index', array( $this, 'add_to_index' ) );
@@ -44,10 +51,8 @@ class WPSEO_XML_News_Sitemap {
 	public function build_news_sitemap() {
 		global $wpdb;
 
-		$options = get_option( 'wpseo_xml' );
-
-		if ( isset( $options['newssitemap_posttypes'] ) && $options['newssitemap_posttypes'] != '' ) {
-			$post_types = array_map( 'sanitize_key', $options['newssitemap_posttypes'] );
+		if ( isset( $this->options['newssitemap_posttypes'] ) && $this->options['newssitemap_posttypes'] != '' ) {
+			$post_types = array_map( 'sanitize_key', $this->options['newssitemap_posttypes'] );
 			$post_types = "'" . implode( "','", $post_types ) . "'";
 		} else {
 			$post_types = "'post'";
@@ -82,7 +87,7 @@ class WPSEO_XML_News_Sitemap {
 					$cats    = get_the_terms( $item->ID, 'category' );
 					$exclude = 0;
 					foreach ( $cats as $cat ) {
-						if ( isset( $options['newssitemap_excludecats'][$cat->slug] ) ) {
+						if ( isset( $this->options['newssitemap_excludecats'][$cat->slug] ) ) {
 							$exclude++;
 						}
 					}
@@ -90,26 +95,26 @@ class WPSEO_XML_News_Sitemap {
 						continue;
 				}
 
-				$publication_name = !empty( $options['newssitemapname'] ) ? $options['newssitemapname'] : get_bloginfo( 'name' );
+				$publication_name = !empty( $this->options['newssitemapname'] ) ? $this->options['newssitemapname'] : get_bloginfo( 'name' );
 				$publication_lang = substr( get_locale(), 0, 2 );
 
-				$keywords = array();
+				$keywords = explode( ',', trim( wpseo_get_value( 'newssitemap-keywords', $item->ID ) ) );
 				$tags     = get_the_terms( $item->ID, 'post_tag' );
 				if ( $tags )
 					foreach ( $tags as $tag )
 						$keywords[] = $tag->name;
 
 				// TODO: add suggested keywords to each post based on category, next to the entire site
-				if ( isset( $options['newssitemap_default_keywords'] ) && $options['newssitemap_default_keywords'] != '' )
-					array_merge( $keywords, explode( ',', $options['newssitemap_default_keywords'] ) );
-				$keywords = strtolower( implode( ', ', $keywords ) );
+				if ( isset( $this->options['newssitemap_default_keywords'] ) && $this->options['newssitemap_default_keywords'] != '' )
+					array_merge( $keywords, explode( ',', $this->options['newssitemap_default_keywords'] ) );
+				$keywords = strtolower(  trim( implode( ', ', $keywords ), ', ' ) );
 
 				$genre = wpseo_get_value( 'newssitemap-genre', $item->ID );
 				if ( is_array( $genre ) )
 					$genre = implode( ',', $genre );
 
-				if ( $genre == '' && isset( $options['newssitemap_default_genre'] ) && $options['newssitemap_default_genre'] != '' )
-					$genre = $options['newssitemap_default_genre'];
+				if ( $genre == '' && isset( $this->options['newssitemap_default_genre'] ) && $this->options['newssitemap_default_genre'] != '' )
+					$genre = $this->options['newssitemap_default_genre'];
 				$genre = trim( preg_replace( '/^none,?/', '', $genre ) );
 
 				$stock_tickers = trim( wpseo_get_value( 'newssitemap-stocktickers' ) );
@@ -123,17 +128,18 @@ class WPSEO_XML_News_Sitemap {
 				$output .= "\t\t\t<news:name>" . htmlspecialchars( $publication_name ) . '</news:name>' . "\n";
 				$output .= "\t\t\t<news:language>" . htmlspecialchars( $publication_lang ) . '</news:language>' . "\n";
 				$output .= "\t\t</news:publication>\n";
-				$output .= "\t\t<news:genres>" . htmlspecialchars( $genre ) . '</news:genres>' . "\n";
+				if ( !empty( $genre ) )
+					$output .= "\t\t<news:genres>" . htmlspecialchars( $genre ) . '</news:genres>' . "\n";
 				$output .= "\t\t<news:publication_date>" . mysql2date( 'c', $item->post_date_gmt ) . '</news:publication_date>' . "\n";
 				$output .= "\t\t<news:title>" . htmlspecialchars( $item->post_title ) . '</news:title>' . "\n";
-				$output .= "\t\t<news:keywords>" . htmlspecialchars( $keywords ) . '</news:keywords>' . "\n";
+				if ( !empty( $keywords ) )
+					$output .= "\t\t<news:keywords>" . htmlspecialchars( $keywords ) . '</news:keywords>' . "\n";
 				$output .= $stock_tickers;
 				$output .= "\t</news:news>\n";
 
 				$images = array();
 				if ( preg_match_all( '/<img [^>]+>/', $item->post_content, $matches ) ) {
 					foreach ( $matches[0] as $img ) {
-						// FIXME: get true caption instead of alt / title
 						if ( preg_match( '/src=("|\')([^"|\']+)("|\')/', $img, $match ) ) {
 							$src = $match[2];
 							if ( strpos( $src, 'http' ) !== 0 ) {
@@ -193,15 +199,21 @@ class WPSEO_XML_News_Sitemap {
 	 * Display the optional sources link elements in the <code>&lt;head&gt;</code>.
 	 */
 	public function head() {
-		if ( is_single() ) {
+		if ( is_singular() ) {
 			global $post;
-			$original_source = wpseo_get_value( 'newssitemap-original', $post->ID );
-			if ( $original_source == '' ) {
-				echo "\t" . '<link rel="original-source" href="' . get_permalink( $post->ID ) . '" />' . "\n";
+
+			$meta_news_keywords = trim( wpseo_get_value( 'newssitemap-keywords', $post->ID ) );
+			if ( !empty( $meta_news_keywords ) ) {
+				echo '<meta name="news_keywords" content="' . $meta_news_keywords . '" />' . "\n";
+			}
+
+			$original_source = trim( wpseo_get_value( 'newssitemap-original', $post->ID ) );
+			if ( !empty( $original_source ) ) {
+				echo '<link rel="original-source" href="' . get_permalink( $post->ID ) . '" />' . "\n";
 			} else {
 				$sources = explode( '|', $original_source );
 				foreach ( $sources as $source )
-					echo "\t" . '<link rel="original-source" href="' . $source . '" />' . "\n";
+					echo '<link rel="original-source" href="' . $source . '" />' . "\n";
 			}
 		}
 	}
