@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: WordPress SEO News
-Version: 1.1
+Version: 1.1.1
 Plugin URI: http://yoast.com/wordpress/seo/news/#utm_source=wpadmin&utm_medium=plugin&utm_campaign=wpseonewsplugin
 Description: Google News plugin for the WordPress SEO plugin
 Author: Joost de Valk
@@ -48,7 +48,7 @@ function load_news_classes() {
 
 		if ( $enabled && in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ) ) )
 			require_once 'xml-news-metabox.php';
-		
+
 	} else if ( $enabled ) {
 		require_once 'xml-news-sitemap-class.php';
 	}
@@ -64,7 +64,7 @@ function load_news_classes() {
  */
 function wpseo_news_add_action_link( $links, $file ) {
 	static $this_plugin;
-	if ( empty( $this_plugin ) ) $this_plugin = basename( dirname( __FILE__) ) . '/' . basename( __FILE__ );
+	if ( empty( $this_plugin ) ) $this_plugin = plugin_basename( __FILE__ );
 	if ( $file == $this_plugin ) {
 		$settings_link = '<a href="' . admin_url( 'admin.php?page=wpseo_news' ) . '">' . __( 'Settings', 'wordpress-seo' ) . '</a>';
 		array_unshift( $links, $settings_link );
