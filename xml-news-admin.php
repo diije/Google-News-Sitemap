@@ -6,7 +6,7 @@
 class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 
 	/**
-	 * Options array
+	 * @var array Options array
 	 */
 	private $options = array();
 
@@ -16,9 +16,16 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 	public function __construct() {
 		$this->options = $this->set_defaults();
 
-		add_action( 'admin_init', array( $this, 'options_init' ) );
-		add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
 		add_filter( 'wpseo_admin_pages', array( $this, 'add_settings_page' ) );
+		add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
+	}
+
+	/**
+	 * Register the News SEO submenu.
+	 */
+	function register_settings_page() {
+		add_submenu_page( 'wpseo_dashboard', __( 'News SEO', 'wordpress-seo' ), __( 'News SEO', 'wordpress-seo' ),
+			'manage_options', 'wpseo_news', array( $this, 'admin_panel' ) );
 	}
 
 	/**
@@ -30,23 +37,23 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 		$options = get_option( 'wpseo_news' );
 
 		if ( !is_array( $options ) ) {
-			$xml_options = get_option( 'wpseo_xml ');
+			$xml_options = get_option( 'wpseo_xml ' );
 			if ( is_array( $xml_options ) && $xml_options['enablexmlnewssitemap'] ) {
 				$options = $xml_options;
-				foreach ( array('enablexmlnewssitemap','newssitemapname','newssitemap_default_genre','newssitemap_default_keywords') as $opt ) {
-					$options[ $opt ] = $xml_options[ $opt ];
-					unset( $xml_options[ $opt ] );
+				foreach ( array( 'enablexmlnewssitemap', 'newssitemapname', 'newssitemap_default_genre', 'newssitemap_default_keywords' ) as $opt ) {
+					$options[$opt] = $xml_options[$opt];
+					unset( $xml_options[$opt] );
 				}
 				foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $posttype ) {
-					if ( isset( $xml_options[ 'newssitemap_include_'.$posttype->name ] ) ) {
-						$options[ 'newssitemap_include_'.$posttype->name ] = $xml_options[ 'newssitemap_include_'.$posttype->name ];
-						unset( $xml_options[ 'newssitemap_include_'.$posttype->name ] );
+					if ( isset( $xml_options['newssitemap_include_' . $posttype->name] ) ) {
+						$options['newssitemap_include_' . $posttype->name] = $xml_options['newssitemap_include_' . $posttype->name];
+						unset( $xml_options['newssitemap_include_' . $posttype->name] );
 					}
 				}
 				update_option( 'wpseo_xml', $xml_options );
 			} else {
-				$options = array();
-				$options[ 'newssitemap_include_post' ] = 'on';
+				$options                             = array();
+				$options['newssitemap_include_post'] = 'on';
 			}
 
 			$options['dbversion'] = '1.1';
@@ -54,13 +61,6 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 		}
 
 		return $options;
-	}
-
-	/**
-	 * Register the wpseo_news option to store our variables.
-	 */
-	function options_init() {
-		register_setting( 'yoast_wpseo_news_options', 'wpseo_news' );
 	}
 
 	/**
@@ -75,29 +75,32 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 	}
 
 	/**
-	 * Register the News SEO submenu.
-	 */
-	function register_settings_page() {
-		add_submenu_page( 'wpseo_dashboard', __( 'News SEO', 'wordpress-seo' ), __( 'News SEO', 'wordpress-seo' ),
-			'manage_options', 'wpseo_news', array( $this, 'admin_panel' ) );
-	}
-
-	/**
 	 * Display the admin panel.
 	 */
 	public function admin_panel() {
 		$this->currentoption = 'wpseo_news';
 
+		echo '<div class="wrap">';
+
 		echo '<a href="http://yoast.com/wordpress/video-seo/">
             <div id="yoast-icon"
-                 style="background: url('.WPSEO_URL.'images/wordpress-SEO-32x32.png) no-repeat;"
+                 style="background: url(' . WPSEO_URL . 'images/wordpress-SEO-32x32.png) no-repeat;"
                  class="icon32">
                 <br/>
             </div>
         </a>';
 
-		echo '<div class="wrap">';
-		echo '<h2>'.__('Google News Sitemaps','wordpress-seo').'</h2>';
+		echo '<h2>' . __( 'Google News Sitemaps', 'wordpress-seo' ) . '</h2>';
+
+		if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] == 'true' ) {
+			$msg = __( 'WordPress SEO News settings updated.', 'wordpress-seo' );
+
+			echo '<div id="message" class="message updated"><p><strong>' . esc_html( $msg ) . '</strong></p></div>';
+		}
+
+		echo '<form action="' . admin_url( 'options.php' ) . '" method="post" id="wpseo-conf">';
+
+		settings_fields( 'yoast_wpseo_news_options' );
 		echo '<p>' . __( 'You will generally only need XML News sitemap when your website is included in Google News. If it is, check the box below to enable the XML News Sitemap functionality.' ) . '</p>';
 		echo $this->checkbox( 'enablexmlnewssitemap', __( 'Enable  XML News sitemaps functionality.' ) );
 		echo '<div id="newssitemapinfo">';
@@ -119,7 +122,7 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 		echo '<h3>' . __( 'Post Types to include in News Sitemap' ) . '</h3>';
 
 		foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $posttype ) {
-			echo $this->checkbox( 'newssitemap_include_'.$posttype->name, $posttype->labels->name , false );
+			echo $this->checkbox( 'newssitemap_include_' . $posttype->name, $posttype->labels->name, false );
 		}
 
 		if ( isset( $this->options['newssitemap_include_post'] ) ) {
@@ -130,7 +133,17 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 		}
 
 		echo '</div>';
+
+		echo '<div class="clear"></div>';
+
+		echo '<div class="submit">';
+		echo '<input type="submit" class="button-primary" value="' . __( 'Save Settings', 'wordpress-seo' ) . '"/>';
 		echo '</div>';
+
+		echo '</form>';
+
+		echo '</div>';
+
 	}
 
 }

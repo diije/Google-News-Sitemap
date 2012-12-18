@@ -41,12 +41,14 @@ function load_news_classes() {
 		add_filter( 'plugin_action_links', 'wpseo_news_add_action_link', 10, 2 );
 
 		global $pagenow;
-		if ( $enabled && in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ) ) ) {
-			require_once 'xml-news-metabox.php';
-		}
-		if ( in_array( $pagenow, array( 'admin.php' ) ) ) {
+		if ( $pagenow != 'admin.php' )
+			require_once 'xml-news-admin-global.php';
+		else
 			require_once 'xml-news-admin.php';
-		}
+
+		if ( $enabled && in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php' ) ) )
+			require_once 'xml-news-metabox.php';
+		
 	} else if ( $enabled ) {
 		require_once 'xml-news-sitemap-class.php';
 	}
