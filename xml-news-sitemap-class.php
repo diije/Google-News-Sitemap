@@ -137,7 +137,6 @@ class WPSEO_XML_News_Sitemap {
 				$output .= $stock_tickers;
 				$output .= "\t</news:news>\n";
 
-				$images = array();
 				if ( preg_match_all( '/<img [^>]+>/', $item->post_content, $matches ) ) {
 					foreach ( $matches[0] as $img ) {
 						if ( preg_match( '/src=("|\')([^"|\']+)("|\')/', $img, $match ) ) {
@@ -171,7 +170,22 @@ class WPSEO_XML_News_Sitemap {
 
                                 if( $post_thumbnail_id ):
                                     $post_thumbnail_url = wp_get_attachment_url( $post_thumbnail_id );
-                                    $images[$post_thumbnail_url] = $item->post_title;
+                                	// Get thumbnail image title and description in database, as it is not in post content
+                                	$post_thumbnail_image = get_posts( array( 'p' => $post_thumbnail_id, 'post_type' => 'attachment' ) );
+                                	$post_thumbnail_alt = get_post_meta( $post_thumbnail_id, '_wp_attachment_image_alt', true );
+                               		$image = array();
+                                	if( $post_thumbnail_image && isset( $post_thumbnail_image[0] ) ) {
+
+                                		if ( isset( $post_thumbnail_image[0]->post_title ) )
+                                			$image['title'] = $post_thumbnail_image[0]->post_title;
+                                		if ( count( $post_thumbnail_alt ) )
+                                			$image['alt'] = $post_thumbnail_alt;
+                                		// If no alt is set, try to get caption
+                                		else if ( isset( $post_thumbnail_image[0]->post_excerpt ) )
+                                			$image['alt'] = $post_thumbnail_image[0]->post_excerpt;
+                                	}
+                                   	$images[$post_thumbnail_url] = $image;
+
                                 endif;
 
 				if ( isset( $images ) && count( $images ) > 0 ) {
