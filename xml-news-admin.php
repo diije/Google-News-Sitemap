@@ -40,7 +40,8 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 			$xml_options = get_option( 'wpseo_xml ' );
 			if ( is_array( $xml_options ) && $xml_options['enablexmlnewssitemap'] ) {
 				$options = $xml_options;
-				foreach ( array( 'enablexmlnewssitemap', 'newssitemapname', 'newssitemap_default_genre', 'newssitemap_default_keywords' ) as $opt ) {
+				//added 'newssitemap_days'
+				foreach ( array( 'enablexmlnewssitemap', 'newssitemapname', 'newssitemap_default_genre', 'newssitemap_default_keywords', 'newssitemap_days' ) as $opt ) {
 					$options[$opt] = $xml_options[$opt];
 					unset( $xml_options[$opt] );
 				}
@@ -73,6 +74,30 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 		array_push( $admin_pages, 'wpseo_news' );
 		return $admin_pages;
 	}
+
+	/**
+	 * Creates an HTML5 "integer only" input.
+	 * Based on WPSEO_admin_pages "textinput" function.
+	 * Only accepts integer value (no decimal).
+	 *
+	 * @param string $var    The variable within the option to create the text input field for.
+	 * @param string $label  The label to show for the variable.
+	 * @param string $option The option the variable belongs to.
+	 * @return string
+	 */
+	function integerinput( $var, $label, $option = '' ) {
+		if ( empty( $option ) )
+			$option = $this->currentoption;
+
+		$options = $this->get_option( $option );
+
+		$val = '';
+		if ( isset( $options[$var] ) )
+			$val = esc_attr( $options[$var] );
+
+		return '<label class="textinput" for="' . esc_attr( $var ) . '">' . $label . ':</label><input class="textinput" type="text" id="' . esc_attr( $var ) . '" name="' . $option . '[' . esc_attr( $var ) . ']" value="' . $val . '" pattern="\d+" required/>' . '<br class="clear" />';
+	}
+
 
 	/**
 	 * Display the admin panel.
@@ -131,6 +156,13 @@ class WPSEO_XML_News_Sitemap_Admin extends WPSEO_Admin_Pages {
 				echo $this->checkbox( 'catexclude_' . $cat->slug, $cat->name . ' (' . $cat->count . ' posts)', false );
 			}
 		}
+
+		// newssitemap_days
+		echo '<h3>' . __( 'Age of posts to include', 'yoast-wpseo' ) . '</h3>';
+		echo '<p>' . __( 'Google recommands including posts that are only two days old into your sitemap. However, you are free to update this limit.', 'yoast-wpseo' ) . '</p>';
+		echo '<p>' . __( 'Enter 0 if you do not want any time limit.', 'yoast-wpseo' ) . '</p>';
+		echo $this->integerinput( 'newssitemap_days', __( 'Posts age', 'yoast-wpseo' ) );
+
 
 		echo '</div>';
 

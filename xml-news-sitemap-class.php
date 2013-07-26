@@ -58,14 +58,30 @@ class WPSEO_XML_News_Sitemap {
 			$post_types = "'post'";
 		}
 
+		// Get 'newssitemap_days' optionvalue. If no value is set, use only 2 days old posts. If value = 0, no limit !
+		$days = 2;
+		if ( isset( $this->options['newssitemap_days'] ) && $this->options['newssitemap_days'] != '' ) {
+			$days = $this->options['newssitemap_days'];
+		}
+
 		// Get posts for the last two days only, credit to Alex Moss for this code.
-		$items = $wpdb->get_results( "SELECT ID, post_content, post_name, post_author, post_parent, post_modified_gmt, post_date, post_date_gmt, post_title, post_type
-									FROM $wpdb->posts
-									WHERE post_status='publish'
-									AND (DATEDIFF(CURDATE(), post_date_gmt)<=2)
-									AND post_type IN ($post_types)
-									ORDER BY post_date_gmt DESC
-									LIMIT 0, 1000" );
+		if ( $days > 0 ) {
+			$items = $wpdb->get_results( "SELECT ID, post_content, post_name, post_author, post_parent, post_modified_gmt, post_date, post_date_gmt, post_title, post_type
+										FROM $wpdb->posts
+										WHERE post_status='publish'
+										AND (DATEDIFF(CURDATE(), post_date_gmt)<=$days)
+										AND post_type IN ($post_types)
+										ORDER BY post_date_gmt DESC
+										LIMIT 0, 1000" );
+		}
+		else {
+			$items = $wpdb->get_results( "SELECT ID, post_content, post_name, post_author, post_parent, post_modified_gmt, post_date, post_date_gmt, post_title, post_type
+										FROM $wpdb->posts
+										WHERE post_status='publish'
+										AND post_type IN ($post_types)
+										ORDER BY post_date_gmt DESC
+										LIMIT 0, 1000" );
+		}
 
 		$output = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
 		xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" 
